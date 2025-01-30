@@ -1,0 +1,248 @@
+<<<<<<< HEAD
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churn Insights Dashboard</title>
+    
+    <!-- Bootstrap for layout -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Chart.js for data visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Churn Insights Dashboard</h1>
+
+        <!-- Summary Section -->
+        <div id="summary" class="text-center mb-5"></div>
+
+        <!-- Charts Section -->
+        <div class="row">
+            <!-- Churn Rate by Age Group -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Churn Rate by Age Group</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="churnByAgeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Usage by Churn Status -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Average Usage by Churn Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="usageByChurnChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Length by Churn -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Average Subscription Length by Churn Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="subscriptionLengthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display summary data
+        fetch('/api/summary')
+            .then(response => response.json())
+            .then(summary => {
+                const summaryDiv = document.getElementById('summary');
+                summaryDiv.innerHTML = `
+                    <h3>Total Customers: ${summary['Total Customers']}</h3>
+                    <h4>Churned Customers: ${summary['Churned Customers']}</h4>
+                    <h4>Retention Rate: ${summary['Retention Rate'].toFixed(2)}%</h4>
+                `;
+            });
+
+        // Fetch and display chart data
+        fetch('/api/charts')
+            .then(response => response.json())
+            .then(chartData => {
+                // Churn Rate by Age Group Chart
+                const churnByAgeCtx = document.getElementById('churnByAgeChart').getContext('2d');
+                new Chart(churnByAgeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(chartData['ChurnByAge']),
+                        datasets: [{
+                            label: 'Churn Rate',
+                            data: Object.values(chartData['ChurnByAge']),
+                            backgroundColor: '#ff6384'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Average Usage by Churn Status Chart
+                const usageByChurnCtx = document.getElementById('usageByChurnChart').getContext('2d');
+                new Chart(usageByChurnCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Not Churned', 'Churned'],
+                        datasets: [{
+                            label: 'Average Usage',
+                            data: Object.values(chartData['UsageByChurn']),
+                            backgroundColor: ['#36a2eb', '#ffcd56']
+                        }]
+                    }
+                });
+
+                // Subscription Length by Churn Status Chart
+                const subscriptionLengthCtx = document.getElementById('subscriptionLengthChart').getContext('2d');
+                new Chart(subscriptionLengthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Not Churned', 'Churned'],
+                        datasets: [{
+                            label: 'Average Subscription Length',
+                            data: Object.values(chartData['SubscriptionByChurn']),
+                            borderColor: '#4caf50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            });
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Customers Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            margin-top: 30px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Bank Customers Dashboard</h1>
+
+        <!-- Navbar for navigating between pages -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Dashboard</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#locationAndBalanceCharts" id="locationAndBalanceLink">Location & Account Balance</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Customer Distribution by Location and Customer Account Balance Distribution -->
+        <div id="locationAndBalanceCharts" class="mt-5">
+            <h2 class="text-center">Customer Distribution by Location & Account Balance</h2>
+            <div class="row">
+                <!-- Location Distribution Chart (Pie Chart) -->
+                <div class="col-md-6">
+                    <h3>Customer Distribution by Location</h3>
+                    <canvas id="locationPieChart"></canvas>
+                </div>
+
+                <!-- Account Balance Distribution Chart -->
+                <div class="col-md-6">
+                    <h3>Customer Account Balance Distribution</h3>
+                    <canvas id="balanceHistogram"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and render charts for Location and Account Balance
+        function fetchDataForLocationAndBalance() {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    // Customer Distribution by Location (Pie Chart)
+                    const locationPieCtx = document.getElementById('locationPieChart').getContext('2d');
+                    new Chart(locationPieCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: data.location_pie_chart.locations,
+                            datasets: [{
+                                label: 'Customer Distribution by Location',
+                                data: data.location_pie_chart.counts,
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                                hoverOffset: 4
+                            }]
+                        },
+                    });
+
+                    // Customer Account Balance Distribution (Histogram)
+                    const balanceHistCtx = document.getElementById('balanceHistogram').getContext('2d');
+                    new Chart(balanceHistCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.balance_histogram.balance_groups,
+                            datasets: [{
+                                label: 'Customer Account Balance Distribution',
+                                data: data.balance_histogram.counts,
+                                backgroundColor: '#FFCE56',
+                                hoverOffset: 4
+                            }]
+                        },
+                    });
+                });
+        }
+
+        // Load the data and render charts on page load
+        fetchDataForLocationAndBalance();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
+>>>>>>> 71934cd (initialCommit)
