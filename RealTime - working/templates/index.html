@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Transactions Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container my-4">
+        <h1 class="text-center">Real-Time Transactions Dashboard</h1>
+
+        <!-- Navbar with a link to transactions page -->
+        <ul class="nav nav-pills my-4">
+            <li class="nav-item">
+                <a class="nav-link active" id="customer-tab" data-bs-toggle="pill" href="#customer-chart">Customer Transactions</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="transaction-tab" data-bs-toggle="pill" href="#transaction-chart">Transaction Details</a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Customer Transactions Chart -->
+            <div class="tab-pane fade show active" id="customer-chart">
+                <!-- Buttons for refresh and auto-refresh at the top -->
+                <div class="d-flex justify-content-between mb-4">
+                    <button id="refresh-customer-btn" class="btn btn-primary">Refresh Customer Transactions</button>
+                    <div class="d-flex align-items-center">
+                        <button id="auto-refresh-customer-toggle" class="btn btn-warning mx-2">Enable Auto-refresh</button>
+                        <label for="interval-customer-select" class="mx-2 mb-0">Interval (Seconds):</label>
+                        <select id="interval-customer-select" class="form-control form-control-sm">
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="6">6</option>
+                            <option value="8">8</option>
+                        </select>
+                    </div>
+                </div>
+                <canvas id="customerTransactionsChart"></canvas>
+            </div>
+
+            <!-- Transaction Details Chart -->
+            <div class="tab-pane fade" id="transaction-chart">
+                <!-- Buttons for refresh and auto-refresh at the top -->
+                <div class="d-flex justify-content-between mb-4">
+                    <button id="refresh-transaction-btn" class="btn btn-primary">Refresh Transaction Details</button>
+                    <div class="d-flex align-items-center">
+                        <button id="auto-refresh-transaction-toggle" class="btn btn-warning mx-2">Enable Auto-refresh</button>
+                        <label for="interval-transaction-select" class="mx-2 mb-0">Interval (Seconds):</label>
+                        <select id="interval-transaction-select" class="form-control form-control-sm">
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="6">6</option>
+                            <option value="8">8</option>
+                        </select>
+                    </div>
+                </div>
+                <canvas id="transactionDetailsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let customerChart = null;
+        let transactionDetailsChart = null;
+        let autoRefreshCustomerInterval = null;
+        let autoRefreshTransactionInterval = null;
+        let autoRefreshCustomerActive = false;
+        let autoRefreshTransactionActive = false;
+
+        // Function to create Customer Transactions chart
+        function createCustomerChart() {
+            const ctx = document.getElementById("customerTransactionsChart").getContext("2d");
+
+            customerChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Total Transaction Amount (INR)",
+                        data: [],
+                        backgroundColor: [],  // Array of colors
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return `₹${tooltipItem.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: "Customer IDs" } },
+                        y: { title: { display: true, text: "Amount (INR)" } }
+                    }
+                }
+            });
+        }
+
+        // Function to generate a random color for the bars
+        function getRandomColor() {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            return `rgba(${r}, ${g}, ${b}, 0.6)`; // Semi-transparent color
+        }
+
+        // Fetch data and render Customer Transactions chart
+        function fetchAndRenderCustomerChart() {
+            fetch("/api/customer_transactions")
+                .then(response => response.json())
+                .then(data => {
+                    if (!customerChart) {
+                        createCustomerChart();
+                    }
+
+                    // Create a new background color array
+                    const colors = data.CustomerIDs.map(() => getRandomColor());
+
+                    customerChart.data.labels = data.CustomerIDs;
+                    customerChart.data.datasets[0].data = data.TotalTransactionAmounts;
+                    customerChart.data.datasets[0].backgroundColor = colors; // Update with new colors
+
+                    customerChart.update();
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    document.getElementById("customerTransactionsChart").innerHTML = "<p class='text-danger'>No data available</p>";
+                });
+        }
+
+        // Function to create Transaction Details chart (Pie chart)
+        function createTransactionDetailsChart() {
+            const ctx = document.getElementById("transactionDetailsChart").getContext("2d");
+
+            transactionDetailsChart = new Chart(ctx, {
+                type: "pie", // Ensure pie chart type
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Transaction Amounts by Customer",
+                        data: [],
+                        backgroundColor: [
+                            "rgba(255, 99, 132, 0.6)",
+                            "rgba(54, 162, 235, 0.6)",
+                            "rgba(255, 206, 86, 0.6)",
+                            "rgba(75, 192, 192, 0.6)",
+                            "rgba(153, 102, 255, 0.6)"
+                        ],
+                        borderColor: [
+                            "rgba(255, 99, 132, 1)",
+                            "rgba(54, 162, 235, 1)",
+                            "rgba(255, 206, 86, 1)",
+                            "rgba(75, 192, 192, 1)",
+                            "rgba(153, 102, 255, 1)"
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return `Customer ${tooltipItem.label}: ₹${tooltipItem.raw}`;
+                                }
+                            }
+                        },
+                        legend: { position: "top" }
+                    }
+                }
+            });
+        }
+
+        // Fetch data and render Transaction Details chart
+        function fetchAndRenderTransactionDetailsChart() {
+            fetch("/api/realtime_transactions")
+                .then(response => response.json())
+                .then(data => {
+                    if (!transactionDetailsChart) {
+                        createTransactionDetailsChart();
+                    }
+                    transactionDetailsChart.data.labels = data.CustomerIDs;
+                    transactionDetailsChart.data.datasets[0].data = data.TransactionAmounts;
+                    transactionDetailsChart.update();
+                })
+                .catch(error => {
+                    console.error("Error fetching data:", error);
+                    document.getElementById("transactionDetailsChart").innerHTML = "<p class='text-danger'>No data available</p>";
+                });
+        }
+
+        // Event listener for the Customer Transactions refresh button
+        document.getElementById('refresh-customer-btn').addEventListener('click', fetchAndRenderCustomerChart);
+
+        // Event listener for the Transaction Details refresh button
+        document.getElementById('refresh-transaction-btn').addEventListener('click', fetchAndRenderTransactionDetailsChart);
+
+        // Auto-refresh toggle logic for Customer Transactions
+        document.getElementById('auto-refresh-customer-toggle').addEventListener('click', function() {
+            if (autoRefreshCustomerInterval) {
+                clearInterval(autoRefreshCustomerInterval);
+                autoRefreshCustomerInterval = null;
+                this.textContent = "Enable Auto-refresh";
+            } else {
+                const interval = parseInt(document.getElementById("interval-customer-select").value) * 1000;
+                autoRefreshCustomerInterval = setInterval(fetchAndRenderCustomerChart, interval);
+                this.textContent = "Disable Auto-refresh";
+            }
+        });
+
+        // Auto-refresh toggle logic for Transaction Details
+        document.getElementById('auto-refresh-transaction-toggle').addEventListener('click', function() {
+            if (autoRefreshTransactionInterval) {
+                clearInterval(autoRefreshTransactionInterval);
+                autoRefreshTransactionInterval = null;
+                this.textContent = "Enable Auto-refresh";
+            } else {
+                const interval = parseInt(document.getElementById("interval-transaction-select").value) * 1000;
+                autoRefreshTransactionInterval = setInterval(fetchAndRenderTransactionDetailsChart, interval);
+                this.textContent = "Disable Auto-refresh";
+            }
+        });
+
+        // Load initial charts
+        fetchAndRenderCustomerChart();
+        fetchAndRenderTransactionDetailsChart();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
+
