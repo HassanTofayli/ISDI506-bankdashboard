@@ -6,6 +6,7 @@
     <title>Real-Time Transactions Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
     <div class="container my-4">
@@ -18,6 +19,15 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="transaction-tab" data-bs-toggle="pill" href="#transaction-chart">Transaction Details</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="dashboard-tab" data-bs-toggle="pill" href="#dashboard-chart">Customer Insights</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="dashboard-tab-echarts" data-bs-toggle="pill" href="#dashboard-chart-echarts">Customer Insights (ECharts)</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="reports-tab" data-bs-toggle="pill" href="#reports-chart">reports Dashboard</a>
             </li>
         </ul>
 
@@ -63,6 +73,122 @@
         </div>
     </div>
 
+    <!-- Modal for Customer Details -->
+    <div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="customerDetailsContent">
+                    <!-- Customer details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="customer-chart">
+            <canvas id="customerTransactionsChart"></canvas>
+        </div>
+        <div class="tab-pane fade" id="transaction-chart">
+            <canvas id="transactionDetailsChart"></canvas>
+        </div>
+        <div class="tab-pane fade" id="dashboard-chart">
+            <div class="row">
+                <div class="col-md-4">
+                    <canvas id="customerJobChart"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="customerMaritalChart"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="customerEducationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- reports-chart -->
+    <div class="tab-content">
+        <!-- <div class="tab-pane fade show active" id="customer-chart">
+            <canvas id="customerTransactionsChart"></canvas>
+        </div> -->
+        <div class="tab-pane fade" id="reports-chart">
+            <!-- <h1 style="align-content: center;">reports</h1> -->
+            <iframe
+                width="100%"
+                height="800"
+                src="{{ embed_url }}"
+                frameborder="0"
+                style="border:0"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+
+    <!-- echarts -->
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="customer-chart">
+            <canvas id="customerTransactionsChart"></canvas>
+        </div>
+        <div class="tab-pane fade" id="transaction-chart">
+            <canvas id="transactionDetailsChart"></canvas>
+        </div>
+        <!-- <div class="tab-pane fade" id="dashboard-chart">
+            <div class="row">
+                <div class="col-md-4">
+                    <canvas id="customerJobChart"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="customerMaritalChart"></canvas>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="customerEducationChart"></canvas>
+                </div>
+            </div>
+        </div> -->
+        <div class="tab-pane fade" id="dashboard-chart-echarts">
+            <div class="row">
+                <div class="col-md-4">
+                    <div id="customerJobChartECharts" style="width: 100%; height: 400px;"></div>
+                </div>
+                <div class="col-md-4">
+                    <div id="customerMaritalChartECharts" style="width: 100%; height: 400px;"></div>
+                </div>
+                <div class="col-md-4">
+                    <div id="customerEducationChartECharts" style="width: 100%; height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<!-- <div class="tab-content">
+    <div class="tab-pane fade show active" id="customer-chart">
+        <canvas id="customerTransactionsChart"></canvas>
+    </div>
+    <div class="tab-pane fade" id="transaction-chart">
+        <canvas id="transactionDetailsChart"></canvas>
+    </div>
+    <div class="tab-pane fade" id="loans-chart">
+        <div class="row">
+            <div class="col-md-6">
+                <div id="loanAmountChart" style="height: 400px;"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="loanTermChart" style="height: 400px;"></div>
+            </div>
+            <div class="col-md-12">
+                <div id="loanStatusChart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div> -->
+</div>
+
     <script>
         let customerChart = null;
         let transactionDetailsChart = null;
@@ -80,7 +206,7 @@
                 data: {
                     labels: [],
                     datasets: [{
-                        label: "Total Transaction Amount (INR)",
+                        label: "Total Transaction Amount ($)",
                         data: [],
                         backgroundColor: [],  // Array of colors
                         borderColor: "rgba(75, 192, 192, 1)",
@@ -94,14 +220,14 @@
                         tooltip: {
                             callbacks: {
                                 label: function(tooltipItem) {
-                                    return `₹${tooltipItem.raw}`;
+                                    return `$${tooltipItem.raw}`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: { title: { display: true, text: "Customer IDs" } },
-                        y: { title: { display: true, text: "Amount (INR)" } }
+                        y: { title: { display: true, text: "Amount ($)" } }
                     }
                 }
             });
@@ -173,11 +299,18 @@
                         tooltip: {
                             callbacks: {
                                 label: function(tooltipItem) {
-                                    return `Customer ${tooltipItem.label}: ₹${tooltipItem.raw}`;
+                                    return `Customer ${tooltipItem.label}: $${tooltipItem.raw}`;
                                 }
                             }
                         },
                         legend: { position: "top" }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const customerID = transactionDetailsChart.data.labels[index];
+                            fetchCustomerDetails(customerID);
+                        }
                     }
                 }
             });
@@ -200,6 +333,84 @@
                     document.getElementById("transactionDetailsChart").innerHTML = "<p class='text-danger'>No data available</p>";
                 });
         }
+        function fetchCustomerDetails(customerID) {
+            fetch(`/api/customer_details/${customerID}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        document.getElementById("customerDetailsContent").innerHTML = "<p class='text-danger'>No details found</p>";
+                    } else {
+                        document.getElementById("customerDetailsContent").innerHTML = `
+                            <p><strong>Name:</strong> ${data.first_name} ${data.last_name}</p>
+                            <p><strong>Email:</strong> ${data.email}</p>
+                            <p><strong>Age:</strong> ${data.age}</p>
+                            <p><strong>Job:</strong> ${data.job}</p>
+                            <p><strong>Marital Status:</strong> ${data.marital}</p>
+                            <p><strong>Education:</strong> ${data.education}</p>
+                            <p><strong>Subscribed Term Deposit:</strong> ${data.subscribed_term_deposit ? "Yes" : "No"}</p>
+                            <p><strong>Default Credit:</strong> ${data.default_credit ? "Yes" : "No"}</p>
+                            <p><strong>Personal Loan:</strong> ${data.personal_loan ? "Yes" : "No"}</p>
+                            <p><strong>State:</strong> ${data.state}</p>
+                            <p><strong>Annual Income:</strong> $${data.annual_inc}</p>
+                        `;
+                    }
+                    new bootstrap.Modal(document.getElementById("customerDetailsModal")).show();
+                })
+                .catch(error => console.error("Error fetching customer details:", error));
+        }
+
+        function fetchDataAndRenderChart(url, chartElementId, chartType, labelKey, dataKey, title) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById(chartElementId).getContext("2d");
+                    new Chart(ctx, {
+                        type: chartType,
+                        data: {
+                            labels: data[labelKey],
+                            datasets: [{
+                                label: title,
+                                data: data[dataKey],
+                                backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                            }]
+                        },
+                        options: {
+                            onClick: function(event, elements) {
+                                if (elements.length > 0) {
+                                    const index = elements[0].index;
+                                    const category = data[labelKey][index];
+                                    fetch(`/api/customers_by_category?type=${labelKey}&value=${category}`)
+                                        .then(response => response.json())
+                                        .then(customers => {
+                                            alert("Customers: " + customers.map(c => c.first_name + " " + c.last_name).join(", "));
+                                        });
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        fetchDataAndRenderChart("/api/customer_distribution/job", "customerJobChart", "bar", "job", "count", "Customer Distribution by Job");
+        fetchDataAndRenderChart("/api/customer_distribution/marital", "customerMaritalChart", "pie", "marital", "count", "Customer Distribution by Marital Status");
+        fetchDataAndRenderChart("/api/customer_distribution/education", "customerEducationChart", "bar", "education", "count", "Customer Distribution by Education");
+
+        // function handleChartClick(event, chart, apiUrl) {
+        //     const points = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, false);
+        //     if (points.length) {
+        //         const index = points[0].index;
+        //         const category = chart.data.labels[index];
+        //         fetch(apiUrl + encodeURIComponent(category))
+        //             .then(response => response.json())
+        //             .then(data => {
+        //                 let details = data.map(customer => `<p>${customer.first_name} ${customer.last_name} - ${customer.email}</p>`).join('');
+        //                 alert("Customers in this category:\n" + details);
+        //             });
+        //     }
+        // }
+
+       
 
         // Event listener for the Customer Transactions refresh button
         document.getElementById('refresh-customer-btn').addEventListener('click', fetchAndRenderCustomerChart);
@@ -236,6 +447,31 @@
         // Load initial charts
         fetchAndRenderCustomerChart();
         fetchAndRenderTransactionDetailsChart();
+
+         function fetchDataAndRenderECharts(url, chartElementId, chartType, labelKey, dataKey, title) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    let chart = echarts.init(document.getElementById(chartElementId));
+                    let option = {
+                        title: { text: title },
+                        tooltip: {},
+                        xAxis: chartType === 'bar' ? { type: 'category', data: data[labelKey] } : {},
+                        yAxis: chartType === 'bar' ? { type: 'value' } : {},
+                        series: [{
+                            type: chartType,
+                            data: data[labelKey].map((label, index) => ({ name: label, value: data[dataKey][index] }))
+                        }]
+                    };
+                    chart.setOption(option);
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        fetchDataAndRenderECharts("/api/customer_distribution/job", "customerJobChartECharts", "bar", "job", "count", "Customer Distribution by Job");
+        fetchDataAndRenderECharts("/api/customer_distribution/marital", "customerMaritalChartECharts", "pie", "marital", "count", "Customer Distribution by Marital Status");
+        fetchDataAndRenderECharts("/api/customer_distribution/education", "customerEducationChartECharts", "bar", "education", "count", "Customer Distribution by Education");
+        
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
